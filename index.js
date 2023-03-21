@@ -1,6 +1,6 @@
 import express from "express";
 import crypto from "crypto";
-import circleauthwrapper from "@circlesystems/circleauth-wrapper";
+import { CircleAccess } from 'circle-access'
 import * as url from "url";
 import dotenv from 'dotenv'
 
@@ -8,14 +8,7 @@ dotenv.config()
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 const app = express();
 const allowedEmails = ["demo@gocircle.ai", "demo1@gocircle.ai","sri.krishna@circlesecurity.ai"];
-
-function initCircle() {
-    circleauthwrapper.configure({
-        appKey: process.env.ACCESS_APPKEY,
-        readKey: process.env.ACCESS_READ_KEY,
-        writeKey: process.env.ACCESS_WRITE_KEY,
-    });
-}
+const circleauthwrapper = new CircleAccess(process.env.ACCESS_APPKEY,process.env.ACCESS_READ_KEY,process.env.ACCESS_WRITE_KEY)
 
 var encryptData = function(dataToEncrypt) {
     return crypto.createHmac('sha256', process.env.SECRET.trim()).update(dataToEncrypt).digest('base64');
@@ -66,7 +59,6 @@ async function validateUserEmail(req, res, next, hashedEmails) {
 }
 
 async function validateUserSession(req, res, next) {
-    initCircle();
     // get the sessionId and userID from callback
     var sessionID = req.query.sessionID;
     var userID = req.query.userID;

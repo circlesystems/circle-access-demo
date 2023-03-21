@@ -104,24 +104,16 @@ npm install --save dotenv express @circlesystems/circleauth-wrapper
 ```javascript
 import express from "express";
 import crypto from "crypto";
-import circleauthwrapper from "@circlesystems/circleauth-wrapper";
+import { CircleAccess } from 'circle-access'
 import * as url from "url";
 import dotenv from 'dotenv'
 
 dotenv.config()
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 const app = express();
+const circleauthwrapper = new CircleAccess(process.env.ACCESS_APPKEY,process.env.ACCESS_READ_KEY,process.env.ACCESS_WRITE_KEY)
+
 const allowedEmails = ["dropYourEmailHere@email.com"]; //remember this has to be the same email you registered on circle access mobile app
-```
-- Function that configures Circle Service.
-```javascript
-function initCircle() {
-  circleauthwrapper.configure({
-    appKey: process.env.ACCESS_APPKEY,
-    readKey: process.env.ACCESS_READ_KEY,
-    writeKey: process.env.ACCESS_WRITE_KEY,
-  });
-}
 ```
 
 - Function that check if the hashedEmails array contains the hash of the user email.
@@ -158,7 +150,6 @@ async function validateUserEmail(req, res, next, hashedEmails) {
 - Function that validates the user session.
 ```javascript
 async function validateUserSession(req, res, next) {
-    initCircle();
     // get the sessionId and userID from callback
     var sessionID = req.query.sessionID;
     var userID = req.query.userID;

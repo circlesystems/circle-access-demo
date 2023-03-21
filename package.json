@@ -1,0 +1,25 @@
+{
+  "name": "circle-access-demo",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "NodeJs Demo for circle access mobile and desktop",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/circlesystems/circle-access-demo.git"
+  },
+  "author": "krishna.vijapurapu@circlesecurity.ai",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/circlesystems/circle-access-demo/issues"
+  },
+  "homepage": "https://github.com/circlesystems/circle-access-demo#readme",
+  "dependencies": {
+    "@circlesystems/circleauth-wrapper": "^1.2.8",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2"
+  }
+}

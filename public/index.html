@@ -1,0 +1,68 @@
+<!doctype html="">
+<html>
+
+<head>
+    <title>Circle Access Mobile - Demo</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"> </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+
+    <script>
+        var timestamp = new Date().getTime();
+        var appKey = 'appAEWBX42dGophgTZZREYAWUBzaEisK14T6'
+        document.write(`\x3Cscript src="https://cdn.circlesecurity.ai/circle/js/circlesecurity.ai-bundle.js?t=${timestamp}">\x3C/script>`);
+        document.write(`\x3Cscript src="https://cdn.circlesecurity.ai/circle/js/circlesecurity.ai.js?t=${timestamp}">\x3C/script>`);
+    </script>
+
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light" style="margin-top:0px">
+        <a class="navbar-brand" href="#"><img src="https://license.gocircle.ai/images/CircleLogoNoCompromise.svg"
+                style="height:30px" /></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo02"
+            aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
+
+        </div>
+    </nav>
+
+    <div class="container-fluid main-cont">
+        <div class="row">
+            < <div class="col-12">
+                <center>
+                    <div id="btn_div" style="margin-top: 60px;">Loading the button async...</div>
+                </center>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        async function init() {
+            const btn = await Circle.getLoginButton();
+            $("#btn_div").html(btn);
+        }
+
+        // this function is called by the circle button
+        function circleButtonClicked() {
+            callJsLoginBtn();
+        }
+
+        function callJsLoginBtn() {
+            window.location.href = "https://circleauth.circlesecurity.ai/login/YOUR_APP_KEY_HERE";
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

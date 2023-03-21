@@ -95,7 +95,7 @@ ACCESS_WRITE_KEY = '#writeKey#'
 
 - The second step is to build the server that will handle the callback.To build the server we have to add some additional NPM packages. Type the following command to install the packages:
 ```bash
-npm install --save dotenv express @circlesystems/circleauth-wrapper
+npm install --save dotenv express circle-access
 ```
 
 ### Server side code step by step,

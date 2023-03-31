@@ -8,7 +8,7 @@ dotenv.config()
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 const app = express();
 const allowedEmails = ["demo@gocircle.ai", "demo1@gocircle.ai","sri.krishna@circlesecurity.ai"];
-const circleauthwrapper = new CircleAccess(process.env.ACCESS_APPKEY,process.env.ACCESS_READ_KEY,process.env.ACCESS_WRITE_KEY)
+const ca = new CircleAccess(process.env.ACCESS_APPKEY,process.env.ACCESS_READ_KEY,process.env.ACCESS_WRITE_KEY)
 
 var encryptData = function(dataToEncrypt) {
     return crypto.createHmac('sha256', process.env.SECRET.trim()).update(dataToEncrypt).digest('base64');
@@ -64,16 +64,16 @@ async function validateUserSession(req, res, next) {
     var userID = req.query.userID;
 
     // check if the session is valid
-    var checkSession = await circleauthwrapper.getUserSession(sessionID, userID);
+    var checkSession = await ca.getUserSession(sessionID, userID);
 
     // if valid, we get the user email hashes
     if (checkSession.data.status == "active") {
         // we get the session details
-        var sessionResult = await circleauthwrapper.getSession(sessionID);
+        var sessionResult = await ca.getSession(sessionID);
 
         // now lets kill the current session
         // this avoid replay attacks
-        await circleauthwrapper.expireUserSession(sessionID, userID);
+        await ca.expireUserSession(sessionID, userID);
 
         // we check if the user has valid emails in his profile
         validateUserEmail(req, res, next, sessionResult.data.userHashedEmails);

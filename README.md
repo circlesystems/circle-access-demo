@@ -83,7 +83,7 @@ ACCESS_WRITE_KEY = '#writeKey#'
         }
 
         function callJsLoginBtn() {
-            window.location.href = "https://circleauth.circlesecurity.ai/login/YOUR_APP_KEY_HERE";
+            window.location.href = "https://circleaccess.circlesecurity.ai/login/YOUR_APP_KEY_HERE";
         }
 
         init();

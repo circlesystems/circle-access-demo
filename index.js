@@ -7,7 +7,7 @@ import dotenv from 'dotenv'
 dotenv.config()
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 const app = express();
-const allowedEmails = ["demo@gocircle.ai", "demo1@gocircle.ai","sri.krishna@circlesecurity.ai"];
+const allowedEmails = ["demo@circlesecurity.ai", "demo1@circlesecurity.ai","sri.krishna@circlesecurity.ai"];
 const ca = new CircleAccess(process.env.ACCESS_APPKEY,process.env.ACCESS_READ_KEY,process.env.ACCESS_WRITE_KEY)
 
 var encryptData = function(dataToEncrypt) {
@@ -21,7 +21,7 @@ async function getCircleToken(){
 
     let signature = encryptData(urlParameters);
     try {
-        const ret = await axios.get("https://api.gocircle.ai/api/token?" + urlParameters + '&signature=' + signature);
+        const ret = await axios.get("https://api.circlesecurity.ai/api/token?" + urlParameters + '&signature=' + signature);
         const cleaned = JSON.parse(ret.data.toString().replace(/\r\n/g, ""));
         return cleaned
 

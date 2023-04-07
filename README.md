@@ -14,7 +14,7 @@ On the callback page, the user will scan the QR code using circle access mobile 
 CUSTOMER_ID='#customerID#'
 ENDUSER_ID =  'userman'  // anythign, but should be different for every user
 SECRET = '#secret#' 
-API_URL = 'https://api.gocircle.ai/api/token' 
+API_URL = 'https://api.circlesecurity.ai/api/token' 
 ACCESS_APPKEY = '#appKey#'
 ACCESS_LOGIN_URL = '#loginUrl#'
 ACCESS_READ_KEY = '#readKey#'
@@ -49,7 +49,7 @@ ACCESS_WRITE_KEY = '#writeKey#'
 <body>
 
     <nav class="navbar navbar-expand-lg navbar-light bg-light" style="margin-top:0px">
-        <a class="navbar-brand" href="#"><img src="https://license.gocircle.ai/images/CircleLogoNoCompromise.svg"
+        <a class="navbar-brand" href="#"><img src="https://license.circlesecurity.ai/images/CircleLogoNoCompromise.svg"
                 style="height:30px" /></a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo02"
             aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">

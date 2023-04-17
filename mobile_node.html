@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset='utf-8'>
+  <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+  <title>Mobile Node</title>
+  <meta name='viewport' content='width=device-width, initial-scale=1'>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <script src="../js/jquery-3.6.0.min.js"></script>
+  <style>
+    .text {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      color: #000000;
+      line-height: 1.5em;
+    }
+
+    .title1 {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: #000000;
+      line-height: 1.5em;
+      font-weight: 600;
+    }
+
+    .title2 {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      color: #000000;
+      line-height: 1.5em;
+      font-weight: 400;
+    }
+
+    .space20 {
+      height: 20px;
+      width: 100%;
+    }
+
+    .close {
+      float: unset !important;
+      font-size: unset !important;
+      font-weight: unset !important;
+      line-height: unset !important;
+      ;
+      color: #00e72a !important;
+      text-shadow: unset !important;
+      filter: unset !important;
+      opacity: unset !important;
+    }
+
+    .copy-clipboard {
+      position: absolute;
+      height: 12px;
+      float: right;
+      right: 20px;
+      top: 20px;
+      z-index: 99999;
+    }
+
+    .arrow-div2 {
+      position: absolute;
+      background: #3ebab6;
+      color: white;
+      padding: 5px;
+      border-radius: 3px;
+      height: 20px;
+      top: 44px;
+      right: 6px;
+      z-index: 99999;
+      height: 27px;
+      /* border: none; */
+    }
+
+    .arrow-div2:after,
+    .arrow-div:before {
+      bottom: 100%;
+      left: 50%;
+      border: solid transparent;
+      content: " ";
+      height: 0;
+      width: 0;
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .arrow-div2:after {
+      border-color: rgba(29, 241, 220, 0);
+      border-bottom-color: #3ebab6;
+      border-width: 6px;
+      margin-left: -6px;
+    }
+
+    .arrow-div2:before {
+      border-color: rgba(255, 255, 255, 0);
+      border-bottom-color: #ffffff;
+      border-width: 7px;
+      margin-left: -7px;
+    }
+
+    #copiedTooltip2 {
+      display: none;
+      border-radius: 3px;
+      height: 20px;
+
+      top: 12px;
+      right: 29px;
+      z-index: 99999;
+      position: relative;
+      border: none;
+    }
+
+    .xxxxxx {
+      position: absolute;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="copiedTooltipContent" style="display:none!important" class="arrow-div2">Copied!</div>
+
+  <p class="text">
+    In this tutorial, we will create an application that displays an HTML page for user interaction. When the user
+    clicks on the button, they will be redirected to the authentication page.<br>
+    On scanning the code QR, the user will be authenticated and redirected to the previously registered callback page
+    with the appropriate credentials. <br>
+    On the callback page, the user will scan the QR code using circle access mobile app after which the user email
+    hash(sha256) will be matched with the database and redirected according to their permissions.
+  </p>
+
+  <div class="space20"></div>
+  <span class="title1">Let´s go step by Step</span>
+  <div class="space20"></div>
+  <p>
+    We will create a Node application using Express. To setup the app, start by typing <b>npm init</b> from the command
+    line.<br>
+  </p>
+  <br>
+  <p class="text">
+    We have to create a <b>.env</b> file in the root directory of the application. This file will contain keys that will
+    be used
+    to validate the user session. Add the following content to the <b>.env</b> file.
+  </p>
+
+  <div class="space20"></div>
+  <pre><code data-language="javascript">  
+CUSTOMER_ID='#customerID#'
+ENDUSER_ID =  'userman'  // anything, but should be different for every user
+SECRET = '#secret#' 
+API_URL = 'https://api.circlesecurity.ai/api/token' 
+ACCESS_APPKEY = '#appKey#'
+ACCESS_LOGIN_URL = '#loginUrl#'
+ACCESS_READ_KEY = '#readKey#'
+ACCESS_WRITE_KEY = '#writeKey#'
+</code></pre>
+
+  <div class="space20"></div>
+  <span class="title2">Let's create the HTML page for user interaction. Please note that you need to replace any
+    instance of **#appkey#** in the html.</span>
+  <div class="space20"></div>
+  <code data-language="html"><pre>
+
+  &lt;!doctype html="">
+  &lt;html>
+  
+  &lt;head>
+      &lt;title>Circle Access Mobile - Demo&lt;/title>
+      &lt;meta http-equiv="X-UA-Compatible" content="IE=edge" />
+      &lt;meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+      &lt;meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+      &lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+  
+      &lt;script src="https://code.jquery.com/jquery-3.6.0.min.js" > &lt;/script>
+  
+      &lt;script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js">&lt;/script>
+  
+      &lt;script>
+          var timestamp = new Date().getTime();
+          document.write(`\x3Cscript src="https://cdn.circlesecurity.ai/circle/js/circlesecurity.ai-bundle.js?t=${timestamp}">\x3C/script>`);
+          document.write(`\x3Cscript src="https://cdn.circlesecurity.ai/circle/js/circlesecurity.ai.js?t=${timestamp}">\x3C/script>`);
+      &lt;/script>
+  
+  &lt;/head>
+  
+  &lt;body>
+  
+      &lt;nav class="navbar navbar-expand-lg navbar-light bg-light" style="margin-top:0px">
+          &lt;a class="navbar-brand" href="#">&lt;img src="https://license.circlesecurity.ai/images/CircleLogoNoCompromise.svg" style="height:30px" />&lt;/a>
+          &lt;button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarTogglerDemo02" aria-controls="navbarTogglerDemo02" aria-expanded="false" aria-label="Toggle navigation">
+              &lt;span class="navbar-toggler-icon">&lt;/span>
+          &lt;/button>
+  
+          &lt;div class="collapse navbar-collapse" id="navbarTogglerDemo02">
+        
+          &lt;/div>
+      &lt;/nav>
+  
+      &lt;div class="container-fluid main-cont">
+          &lt;div class="row">&lt;
+              &lt;div class="col-12">
+                &lt;center>&lt;div id="btn_div" style="margin-top: 60px;">Loading the button async...&lt;/div>&lt;/center>
+              &lt;/div>
+          &lt;/div>
+      &lt;/div>
+  
+      &lt;script>
+          async function init() {
+         const btn = await Circle.getLoginButton();
+             $("#btn_div").html(btn);
+          }
+          
+          // this function is called by the circle button
+          function circleButtonClicked() {
+           callJsLoginBtn();
+          }
+          
+          function callJsLoginBtn() {
+            window.location.href= "https://circleaccess.circlesecurity.ai/login/#appKey#"; //replace app key here
+          }
+    
+          init();
+      &lt;/script>
+  &lt;/body>&lt;/html>
+  
+  &lt;!doctype>
+
+</code></pre>
+
+  <div class="space20"></div>
+  <span class="title2">- The second step is to build the server that will handle the callback.</span>
+  <div class="space20"></div>
+  <span class="title2">To build the server we have to add some additional NPM packages.<br><br>
+    Type the following command to install the packages: <p class="title2"><b>npm install dotenv crypto express circle-access</b></p></span>
+  <div class="space20"></div>
+  <br>
+  <span class="title2"><b>The code step by step:</b></span>
+  <br><br>Imports and constants used by the server: <br>
+
+  <div class="space20"></div>
+  <pre><code data-language="javascript">  
+  import express from "express";
+  import crypto from "crypto";
+  import { CircleAccess } from 'circle-access'
+  import * as url from "url";
+  import dotenv from 'dotenv'
+  
+  dotenv.config()
+  const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
+  const app = express();
+  
+  // The array of allowed emails is hard-coded for this example.
+  // A database query should be used to check if a hash of the array
+  // hashedEmails matches the email hash of the database.
+  // Make sure you have an email added to circle access mobile application that also needs to be in the db/array below.
+  const allowedEmails = ["demo@circlesecurity.ai", "demo1@circlesecurity.ai", "sri.krishna@circlesecurity.ai"];
+  
+  const circleAccess = new CircleAccess(process.env.ACCESS_APPKEY, process.env.ACCESS_READ_KEY, process.env.ACCESS_WRITE_KEY)
+    
+ 
+</code></pre>
+
+  <div class="space20"></div>
+  <p class="title2">Function that checks if the hashedEmails array contains the hash of the user email.</p>
+  <div class="space20"></div>
+  <pre><code data-language="javascript">  
+  async function validateUserEmail(hashedEmails) {
+    var hasValidEmail = false;
+    var hashTmp = "";
+    var userEmail = ""; // you can store authenticated email if any for further use in your application
+    // list hashedEmails elements
+    for (var idx = 0; idx < hashedEmails.length; idx++) {
+        // create a hash of the allowed email
+        hashTmp = crypto.createHash("sha256").update(allowedEmails[idx]).digest("hex");
+
+        // if the email is valid, we set the flag to true
+        if (hashedEmails.indexOf(hashTmp) > -1) {
+            hasValidEmail = true;
+            userEmail = allowedEmails[idx]
+            break;
+        }
+    }
+
+    return [ hasValidEmail, userEmail ]
+  }
+</code></pre>
+  <div class="space20"></div>
+  <p class="title2">Function that validates the user session.</p>
+  <div class="space20"></div>
+  <pre><code data-language="javascript">
+  async function validateUserSession(sessionID, userID) {
+
+    // check if the session is valid
+    var checkSession = await circleAccess.getUserSession(sessionID, userID);
+
+    // if valid, we get the user email hashes
+    if (checkSession.data.status == "active") {
+        // we get the session details
+        var sessionResult = await circleAccess.getSession(sessionID);
+
+        // now lets kill the current session
+        // this avoid replay attacks
+        await circleAccess.expireUserSession(sessionID, userID);
+
+        // we check if the user has valid emails in his profile
+        var hasValidEmail = validateUserEmail(sessionResult.data.userHashedEmails);
+        return hasValidEmail
+    }
+    return [ false, "" ]
+  }
+</code></pre>
+
+  <div class="space20"></div>
+  <p class="title2">Define the api routes and set the server to listen at port 3000</p>
+  <div class="space20"></div>
+  <pre><code data-language="javascript">
+  app.get('/', async function (req, res, next) {
+    if (req.query.userID) {
+        var [hasValidEmail, userEmail]  = await validateUserSession(req.query.sessionID, req.query.userID);
+        if (hasValidEmail) {
+            // the email is valid, we can redirect the user to an allowed page
+            // For this example, we will only show a message
+            res.status(200).json({ status: "ok", message: `Hey ${userEmail} You are allowed to access this page` });
+        }
+        else {
+            // the email is not valid, we redirect the user to an error page
+            res.status(401).json({
+                message: "Unauthorized",
+            });
+
+        }
+    } else {
+        res.sendFile(__dirname + "/public/index.html")
+    }
+  })
+
+  app.listen(3000);
+  console.log("Listening on http://localhost:3000");
+</code></pre>
+
+
+  <div class="space20"></div>
+  <p class="title2">The full code of <b>server.js</b>:</p>
+  <div class="space20"></div>
+  <pre><code data-language="javascript">  
+    import express from "express";
+    import crypto from "crypto";
+    import { CircleAccess } from 'circle-access'
+    import * as url from "url";
+    import dotenv from 'dotenv'
+    
+    dotenv.config()
+    const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
+    const app = express();
+    
+    // The array of allowed emails is hard-coded for this example.
+    // A database query should be used to check if a hash of the array
+    // hashedEmails matches the email hash of the database.
+    const allowedEmails = ["demo@circlesecurity.ai", "demo1@circlesecurity.ai", "sri.krishna@circlesecurity.ai"];
+    
+    const circleAccess = new CircleAccess(process.env.ACCESS_APPKEY, process.env.ACCESS_READ_KEY, process.env.ACCESS_WRITE_KEY)
+    
+    /**
+     * Checks if there is an email hash that exists in authenticated hashes
+     * @param {Object} hashedEmails contains all email hashes for current circle user
+     */
+    async function validateUserEmail(hashedEmails) {
+        var hasValidEmail = false;
+        var hashTmp = "";
+        var userEmail = ""; // you can store authenticated email if any for further use in your application
+        // list hashedEmails elements
+        for (var idx = 0; idx < hashedEmails.length; idx++) {
+            // create a hash of the allowed email
+            hashTmp = crypto.createHash("sha256").update(allowedEmails[idx]).digest("hex");
+    
+            // if the email is valid, we set the flag to true
+            if (hashedEmails.indexOf(hashTmp) > -1) {
+                hasValidEmail = true;
+                userEmail = allowedEmails[idx]
+                break;
+            }
+        }
+    
+        return [ hasValidEmail, userEmail ]
+    }
+    
+    /**
+     * validates if user is authenticated or not
+     * @returns {Object} 
+     */
+    async function validateUserSession(sessionID, userID) {
+    
+        // check if the session is valid
+        var checkSession = await circleAccess.getUserSession(sessionID, userID);
+    
+        // if valid, we get the user email hashes
+        if (checkSession.data.status == "active") {
+            // we get the session details
+            var sessionResult = await circleAccess.getSession(sessionID);
+    
+            // now lets kill the current session
+            // this avoid replay attacks
+            await circleAccess.expireUserSession(sessionID, userID);
+    
+            // we check if the user has valid emails in his profile
+            var hasValidEmail = validateUserEmail(sessionResult.data.userHashedEmails);
+            return hasValidEmail
+        }
+        return [ false, "" ]
+    }
+    
+    app.get('/', async function (req, res, next) {
+        if (req.query.userID) {
+            var [hasValidEmail, userEmail]  = await validateUserSession(req.query.sessionID, req.query.userID);
+            if (hasValidEmail) {
+                // the email is valid, we can redirect the user to an allowed page
+                // For this example, we will only show a message
+                res.status(200).json({ status: "ok", message: `Hey ${userEmail} You are allowed to access this page` });
+            }
+            else {
+                // the email is not valid, we redirect the user to an error page
+                res.status(401).json({
+                    message: "Unauthorized",
+                });
+    
+            }
+        } else {
+            res.sendFile(__dirname + "/public/index.html")
+        }
+    })
+    
+    app.listen(3000);
+    console.log("Listening on http://localhost:3000");
+
+</code></pre>
+  <div class="space20"></div>
+  <p class="title2">To start the server, execute the following line of code in the application folder:</p>
+
+  node server
+
+  <div class="space20"></div>
+  <p class="title2">After starting the server, navigate to <b>http://localhost:3000 </b>in a web browser.</b></p>
+  <div class="space20"></div>
+  <span class="title2"><strong>You can download the complete sample code at <a href="https://github.com/circlesystems/circle-access-demo" target="_blank">Github</a</strong></span>
+
+  <style>
+    .btn-copy-clip {
+      height: 20px;
+      position: absolute;
+      top: 12px;
+      right: 29px;
+      z-index: 99999;
+    }
+  </style>
+
+  <script>
+
+    $("pre").prepend('<img src="./images/copy_white.svg" class="btn-copy-clip"   title="Copy to clipboard">');
+
+    var colored = false;
+    Rainbow.defer = true;
+    Rainbow.color();
+
+
+    setTimeout(function () {
+      $(".btn-copy-clip").off();
+
+      $(".btn-copy-clip").on("click", function () {
+
+        textToClipboard($(this).parent().find("code").text());
+        $("#copiedTooltipContent").detach().appendTo($(this).parent());
+        $("#copiedTooltipContent").show();
+
+        setTimeout(function () {
+          $("#copiedTooltipContent").hide();
+        }, 3000);
+
+      });
+    }, 500);
+
+
+    function textToClipboard(text) {
+      var dummy = document.createElement("textarea");
+      document.body.appendChild(dummy);
+      dummy.value = text;
+      dummy.select();
+      document.execCommand("copy");
+      document.body.removeChild(dummy);
+    }
+
+
+  </script>
+
+</body>
+
+</html>

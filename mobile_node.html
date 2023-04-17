@@ -163,7 +163,7 @@ ACCESS_WRITE_KEY = '#writeKey#'
 
   <div class="space20"></div>
   <span class="title2">Let's create the HTML page for user interaction. Please note that you need to replace any
-    instance of **YOUR_APP_KEY_HERE** in the html.</span>
+    instance of **#appkey#** in the html.</span>
   <div class="space20"></div>
   <code data-language="html"><pre>
 
@@ -222,7 +222,7 @@ ACCESS_WRITE_KEY = '#writeKey#'
           }
           
           function callJsLoginBtn() {
-            window.location.href= "https://circleaccess.circlesecurity.ai/login/YOUR_APP_KEY_HERE";
+            window.location.href= "https://circleaccess.circlesecurity.ai/login/#appKey#"; //replace app key here
           }
     
           init();
@@ -254,13 +254,14 @@ ACCESS_WRITE_KEY = '#writeKey#'
   dotenv.config()
   const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
   const app = express();
-  const circleauthwrapper = new CircleAccess(process.env.ACCESS_APPKEY,process.env.ACCESS_READ_KEY,process.env.ACCESS_WRITE_KEY)
-  
   
   // The array of allowed emails is hard-coded for this example.
   // A database query should be used to check if a hash of the array
   // hashedEmails matches the email hash of the database.
-  const allowedEmails = ["dropYourEmailHere@dropemail.com"];
+  const allowedEmails = ["demo@circlesecurity.ai", "demo1@circlesecurity.ai", "sri.krishna@circlesecurity.ai"];
+  
+  const circleAccess = new CircleAccess(process.env.ACCESS_APPKEY, process.env.ACCESS_READ_KEY, process.env.ACCESS_WRITE_KEY)
+    
  
 </code></pre>
 
@@ -268,106 +269,78 @@ ACCESS_WRITE_KEY = '#writeKey#'
   <p class="title2">Function that check if the hashedEmails array contains the hash of the user email.</p>
   <div class="space20"></div>
   <pre><code data-language="javascript">  
-  async function validateUserEmail(req, res, next, hashedEmails) {
+  async function validateUserEmail(hashedEmails) {
     var hasValidEmail = false;
     var hashTmp = "";
-
+    var userEmail = ""; // you can store authenticated email if any for further use in your application
     // list hashedEmails elements
     for (var idx = 0; idx < hashedEmails.length; idx++) {
-      // create a hash of the allowed email
-      hashTmp = crypto.createHash("sha256").update(allowedEmails[idx]).digest("hex");
+        // create a hash of the allowed email
+        hashTmp = crypto.createHash("sha256").update(allowedEmails[idx]).digest("hex");
 
-      // if the email is valid, we set the flag to true
-      if (hashedEmails.indexOf(hashTmp) > -1) {
-        hasValidEmail = true;
-        break;
-      }
+        // if the email is valid, we set the flag to true
+        if (hashedEmails.indexOf(hashTmp) > -1) {
+            hasValidEmail = true;
+            userEmail = allowedEmails[idx]
+            break;
+        }
     }
-  
-    if (hasValidEmail) {
-      // the email is valid, we can redirect the user to an allowed page
-      // For this example, we will only show a message
-      res.status(200).json({ status: "ok", message: "You are allowed to access this page" });
-    } else {
-      // the email is not valid, we redirect the user to an error page
-      res.status(401).json({
-        message: "Unauthorized",
-      });
-    }
+
+    return [ hasValidEmail, userEmail ]
   }
 </code></pre>
   <div class="space20"></div>
   <p class="title2">Function that validates the user session.</p>
   <div class="space20"></div>
-  <pre><code data-language="javascript">  
-async function validateUserSession(req, res, next) {
-  // get the sessionId and userID from callback
-  var sessionID = req.query.sessionID;
-  var userID = req.query.userID;
+  <pre><code data-language="javascript">
+  async function validateUserSession(sessionID, userID) {
 
-  // check if the session is valid
-  var checkSession = await circleauthwrapper.getUserSession(sessionID, userID);
+    // check if the session is valid
+    var checkSession = await circleAccess.getUserSession(sessionID, userID);
 
-  // if valid, we get the user email hashes
-  if (checkSession.data.status == "active") {
-    // we get the session details
-    var sessionResult = await circleauthwrapper.getSession(sessionID);
+    // if valid, we get the user email hashes
+    if (checkSession.data.status == "active") {
+        // we get the session details
+        var sessionResult = await circleAccess.getSession(sessionID);
 
-    // now lets kill the current session
-    // this avoid replay attacks
-    await circleauthwrapper.expireUserSession(sessionID, userID);
+        // now lets kill the current session
+        // this avoid replay attacks
+        await circleAccess.expireUserSession(sessionID, userID);
 
-    // we check if the user has valid emails in his profile
-    validateUserEmail(req, res, next, sessionResult.data.userHashedEmails);
-  } else {
-    res.status(401).json({
-      message: "Unauthorized",
-    });
+        // we check if the user has valid emails in his profile
+        var hasValidEmail = validateUserEmail(sessionResult.data.userHashedEmails);
+        return hasValidEmail
+    }
+    return [ false, "" ]
   }
-}
 </code></pre>
 
   <div class="space20"></div>
-  <p class="title2">Functions to get a circle token.</p>
+  <p class="title2">Define the api routes and set the server to listen at port 3000</p>
   <div class="space20"></div>
   <pre><code data-language="javascript">
-  var encryptData = function(dataToEncrypt) {
-    return crypto.createHmac('sha256', process.env.SECRET.trim()).update(dataToEncrypt).digest('base64');
-  }
+  app.get('/', async function (req, res, next) {
+    if (req.query.userID) {
+        var [hasValidEmail, userEmail]  = await validateUserSession(req.query.sessionID, req.query.userID);
+        if (hasValidEmail) {
+            // the email is valid, we can redirect the user to an allowed page
+            // For this example, we will only show a message
+            res.status(200).json({ status: "ok", message: `Hey ${userEmail} You are allowed to access this page` });
+        }
+        else {
+            // the email is not valid, we redirect the user to an error page
+            res.status(401).json({
+                message: "Unauthorized",
+            });
 
-  async function getCircleToken(){
-      let timeStamp = Math.floor(Date.now() / 1000);
-      let urlParameters = `customerId=${process.env.CUSTOMER_ID}&appKey=${process.env.ACCESS_APPKEY}&endUserId=${process.env.END_USER_ID}`;
-      urlParameters += '&nonce=' + timeStamp;
-
-      let signature = encryptData(urlParameters);
-      try {
-          const ret = await axios.get("https://api.circlesecurity.ai/api/token?" + urlParameters + '&signature=' + signature);
-          const cleaned = JSON.parse(ret.data.toString().replace(/\r\n/g, ""));
-          return cleaned
-
-      } catch (error) {
-          console.log(error);
-      }
-  }
-</code></pre>
-
-  <div class="space20"></div>
-  <p class="title2">Starts the server at port 3000 and handles the requests.</p>
-  <div class="space20"></div>
-  <pre><code data-language="javascript">  
-  app.get('/tokengen', async function(req, res){
-    var token = await getCircleToken()
-    res.json(token)
+        }
+    } else {
+        res.sendFile(__dirname + "/public/index.html")
+    }
   })
 
-  app.get('/', async function(req, res, next){
-    if(req.query.userID){
-        validateUserSession(req, res, next);
-    } else{
-        res.sendFile(__dirname+"/public/index.html")
-    }
-  }) 
+  app.listen(3000);
+  console.log("Listening on http://localhost:3000");
 </code></pre>
 
 
@@ -385,7 +358,7 @@ async function validateUserSession(req, res, next) {
   const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
   const app = express();
   const allowedEmails = ["dropYourEmailHere@email.com"];
-  const circleauthwrapper = new CircleAccess(process.env.ACCESS_APPKEY,process.env.ACCESS_READ_KEY,process.env.ACCESS_WRITE_KEY)
+  const circleAccess = new CircleAccess(process.env.ACCESS_APPKEY,process.env.ACCESS_READ_KEY,process.env.ACCESS_WRITE_KEY)
   
   var encryptData = function(dataToEncrypt) {
       return crypto.createHmac('sha256', process.env.SECRET.trim()).update(dataToEncrypt).digest('base64');
@@ -441,16 +414,16 @@ async function validateUserSession(req, res, next) {
       var userID = req.query.userID;
   
       // check if the session is valid
-      var checkSession = await circleauthwrapper.getUserSession(sessionID, userID);
+      var checkSession = await circleAccess.getUserSession(sessionID, userID);
   
       // if valid, we get the user email hashes
       if (checkSession.data.status == "active") {
           // we get the session details
-          var sessionResult = await circleauthwrapper.getSession(sessionID);
+          var sessionResult = await circleAccess.getSession(sessionID);
   
           // now lets kill the current session
           // this avoid replay attacks
-          await circleauthwrapper.expireUserSession(sessionID, userID);
+          await circleAccess.expireUserSession(sessionID, userID);
   
           // we check if the user has valid emails in his profile
           validateUserEmail(req, res, next, sessionResult.data.userHashedEmails);

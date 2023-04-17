@@ -7,33 +7,22 @@ import dotenv from 'dotenv'
 dotenv.config()
 const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
 const app = express();
-const allowedEmails = ["demo@circlesecurity.ai", "demo1@circlesecurity.ai","sri.krishna@circlesecurity.ai"];
-const ca = new CircleAccess(process.env.ACCESS_APPKEY,process.env.ACCESS_READ_KEY,process.env.ACCESS_WRITE_KEY)
 
-var encryptData = function(dataToEncrypt) {
-    return crypto.createHmac('sha256', process.env.SECRET.trim()).update(dataToEncrypt).digest('base64');
-}
+// The array of allowed emails is hard-coded for this example.
+// A database query should be used to check if a hash of the array
+// hashedEmails matches the email hash of the database.
+const allowedEmails = ["demo@circlesecurity.ai", "demo1@circlesecurity.ai", "sri.krishna@circlesecurity.ai"];
 
-async function getCircleToken(){
-    let timeStamp = Math.floor(Date.now() / 1000);
-    let urlParameters = `customerId=${process.env.CUSTOMER_ID}&appKey=${process.env.ACCESS_APPKEY}&endUserId=${process.env.END_USER_ID}`;
-    urlParameters += '&nonce=' + timeStamp;
+const circleAccess = new CircleAccess(process.env.ACCESS_APPKEY, process.env.ACCESS_READ_KEY, process.env.ACCESS_WRITE_KEY)
 
-    let signature = encryptData(urlParameters);
-    try {
-        const ret = await axios.get("https://api.circlesecurity.ai/api/token?" + urlParameters + '&signature=' + signature);
-        const cleaned = JSON.parse(ret.data.toString().replace(/\r\n/g, ""));
-        return cleaned
-
-    } catch (error) {
-        console.log(error);
-    }
-}
-
-async function validateUserEmail(req, res, next, hashedEmails) {
+/**
+ * Checks if there is an email hash that exists in authenticated hashes
+ * @param {Object} hashedEmails contains all email hashes for current circle user
+ */
+async function validateUserEmail(hashedEmails) {
     var hasValidEmail = false;
     var hashTmp = "";
-
+    var userEmail = ""; // you can store authenticated email if any for further use in your application
     // list hashedEmails elements
     for (var idx = 0; idx < hashedEmails.length; idx++) {
         // create a hash of the allowed email
@@ -42,58 +31,56 @@ async function validateUserEmail(req, res, next, hashedEmails) {
         // if the email is valid, we set the flag to true
         if (hashedEmails.indexOf(hashTmp) > -1) {
             hasValidEmail = true;
+            userEmail = allowedEmails[idx]
             break;
         }
     }
 
-    if (hasValidEmail) {
-        // the email is valid, we can redirect the user to an allowed page
-        // For this example, we will only show a message
-        res.status(200).json({ status: "ok", message: "You are allowed to access this page" });
-    } else {
-        // the email is not valid, we redirect the user to an error page
-        res.status(401).json({
-            message: "Unauthorized",
-        });
-    }
+    return [ hasValidEmail, userEmail ]
 }
 
-async function validateUserSession(req, res, next) {
-    // get the sessionId and userID from callback
-    var sessionID = req.query.sessionID;
-    var userID = req.query.userID;
+/**
+ * validates if user is authenticated or not
+ * @returns {Object} 
+ */
+async function validateUserSession(sessionID, userID) {
 
     // check if the session is valid
-    var checkSession = await ca.getUserSession(sessionID, userID);
+    var checkSession = await circleAccess.getUserSession(sessionID, userID);
 
     // if valid, we get the user email hashes
     if (checkSession.data.status == "active") {
         // we get the session details
-        var sessionResult = await ca.getSession(sessionID);
+        var sessionResult = await circleAccess.getSession(sessionID);
 
         // now lets kill the current session
         // this avoid replay attacks
-        await ca.expireUserSession(sessionID, userID);
+        await circleAccess.expireUserSession(sessionID, userID);
 
         // we check if the user has valid emails in his profile
-        validateUserEmail(req, res, next, sessionResult.data.userHashedEmails);
-    } else {
-        res.status(401).json({
-            message: "Unauthorized",
-        });
+        var hasValidEmail = validateUserEmail(sessionResult.data.userHashedEmails);
+        return hasValidEmail
     }
+    return [ false, "" ]
 }
 
-app.get('/tokengen', async function(req, res){
-    var token = await getCircleToken()
-    res.json(token)
-})
+app.get('/', async function (req, res, next) {
+    if (req.query.userID) {
+        var [hasValidEmail, userEmail]  = await validateUserSession(req.query.sessionID, req.query.userID);
+        if (hasValidEmail) {
+            // the email is valid, we can redirect the user to an allowed page
+            // For this example, we will only show a message
+            res.status(200).json({ status: "ok", message: `Hey ${userEmail} You are allowed to access this page` });
+        }
+        else {
+            // the email is not valid, we redirect the user to an error page
+            res.status(401).json({
+                message: "Unauthorized",
+            });
 
-app.get('/', async function(req, res, next){
-    if(req.query.userID){
-        validateUserSession(req, res, next);
-    } else{
-        res.sendFile(__dirname+"/public/index.html")
+        }
+    } else {
+        res.sendFile(__dirname + "/public/index.html")
     }
 })
 
